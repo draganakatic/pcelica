@@ -1,0 +1,478 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        37.21677017211914,
+        81.65499114990234,
+        35.81879425048828
+      ],
+      "min": [
+        -35.920623779296875,
+        -84.56169128417969,
+        -36.575889587402344
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 786384,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9999942779541016,
+        0.9999780058860779,
+        0.9999196529388428
+      ],
+      "min": [
+        -0.9999943375587463,
+        -0.9999781847000122,
+        -0.9999485015869141
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9999893307685852,
+        0.9998164772987366,
+        0.9998885989189148,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -0.9999879598617554,
+        -0.9998440742492676,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9994322657585144,
+        0.999835193157196
+      ],
+      "min": [
+        0.000629916787147522,
+        0.003193378448486328
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 524256,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9994322657585144,
+        0.999835193157196
+      ],
+      "min": [
+        0.000629916787147522,
+        0.003193378448486328
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1048512,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9994322657585144,
+        0.999835193157196
+      ],
+      "min": [
+        0.000629916787147522,
+        0.003193378448486328
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1572768,
+      "componentType": 5126,
+      "count": 65532,
+      "max": [
+        0.9994322657585144,
+        0.999835193157196
+      ],
+      "min": [
+        0.000629916787147522,
+        0.003193378448486328
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 274299,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 1572768,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        -16.48432159423828,
+        77.1855697631836,
+        -19.716800689697266
+      ],
+      "min": [
+        -25.932254791259766,
+        66.16871643066406,
+        -36.575889587402344
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 1607124,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.9998438358306885,
+        0.9701518416404724,
+        0.9996904134750366
+      ],
+      "min": [
+        -0.9989852905273438,
+        -0.9828923344612122,
+        -0.999038577079773
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 3,
+      "byteOffset": 1048512,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.9918291568756104,
+        0.9964930415153503,
+        0.9839396476745605,
+        1.0
+      ],
+      "min": [
+        -0.9748225212097168,
+        -0.9991288185119629,
+        -0.9946175813674927,
+        -1.0
+      ],
+      "type": "VEC4"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 2097024,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.3002831041812897,
+        0.9988064169883728
+      ],
+      "min": [
+        0.000629916787147522,
+        0.08244595676660538
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 2119928,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.3002831041812897,
+        0.9988064169883728
+      ],
+      "min": [
+        0.000629916787147522,
+        0.08244595676660538
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 2142832,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.3002831041812897,
+        0.9988064169883728
+      ],
+      "min": [
+        0.000629916787147522,
+        0.08244595676660538
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 2165736,
+      "componentType": 5126,
+      "count": 2863,
+      "max": [
+        0.3002831041812897,
+        0.9988064169883728
+      ],
+      "min": [
+        0.000629916787147522,
+        0.08244595676660538
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 1097196,
+      "componentType": 5125,
+      "count": 10563,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "MyVisoin (https://sketchfab.com/TemurG)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/geranium-flower-e2b49bd91dcd4bc3aecbd65160a38756",
+      "title": "Geranium flower"
+    },
+    "generator": "Sketchfab-15.16.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 1139448,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 2188640,
+      "byteOffset": 1139448,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1641480,
+      "byteOffset": 3328088,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1094320,
+      "byteOffset": 4969568,
+      "byteStride": 16,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 6063888,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Geranium_baseColor.png"
+    },
+    {
+      "uri": "textures/Geranium_metallicRoughness.png"
+    },
+    {
+      "uri": "textures/Geranium_normal.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Geranium",
+      "normalTexture": {
+        "index": 2,
+        "texCoord": 2
+      },
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "metallicRoughnessTexture": {
+          "index": 1,
+          "texCoord": 1
+        }
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Object_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TANGENT": 2,
+            "TEXCOORD_0": 3,
+            "TEXCOORD_1": 4,
+            "TEXCOORD_2": 5,
+            "TEXCOORD_3": 6
+          },
+          "indices": 7,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Object_1",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 9,
+            "POSITION": 8,
+            "TANGENT": 10,
+            "TEXCOORD_0": 11,
+            "TEXCOORD_1": 12,
+            "TEXCOORD_2": 13,
+            "TEXCOORD_3": 14
+          },
+          "indices": 15,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "name": "root"
+    },
+    {
+      "children": [
+        3
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "GLTF_SceneRootNode"
+    },
+    {
+      "children": [
+        4,
+        5
+      ],
+      "matrix": [
+        0.13890756928379083,
+        -0.028191312089537537,
+        -0.003773663373254082,
+        0.0,
+        0.028441613386519324,
+        0.13750506908347643,
+        0.019690962933173944,
+        0.0,
+        -0.00025542225565516495,
+        -0.020047671859396828,
+        0.1403649549498885,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Geranium_0"
+    },
+    {
+      "mesh": 0,
+      "name": "Object_4"
+    },
+    {
+      "mesh": 1,
+      "name": "Object_5"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    },
+    {
+      "sampler": 0,
+      "source": 1
+    },
+    {
+      "sampler": 0,
+      "source": 2
+    }
+  ]
+}
