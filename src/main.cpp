@@ -26,7 +26,12 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+unsigned int loadTexture(char const * path);
+
 unsigned int loadCubemap(vector<std::string> faces);
+
+void renderQuad();
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -38,6 +43,7 @@ float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
 bool blinn = false;
+float heightScale = 0.1;
 bool BKeyPressed = false;
 
 // timing
@@ -186,11 +192,11 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    //face culling <3
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    //face culling ne radi pod sa njim, ako treba ukljuci
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
 
-    //blend <3
+    //blend za bele cvetove po livadi i za fenjer okacen o trem iznad zeca
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -199,6 +205,7 @@ int main() {
     Shader shaderModel("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader shaderSkybox("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader shaderCube("resources/shaders/cube.vs", "resources/shaders/cube.fs");
+    Shader shaderNormal("resources/shaders/normal.vs", "resources/shaders/normal.fs");
 
     float cubeVertices[] = {
             // positions          // normals
@@ -315,29 +322,16 @@ int main() {
 
     vector<std::string> faces
             {
-                    FileSystem::getPath("resources/textures/skybox/meadow_lf.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_rt.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_up.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_dn.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_ft.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_bk.jpg")
-            };
-
-    vector<std::string> faces2
-            {
-                    FileSystem::getPath("resources/textures/skybox/meadow_lf.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_rt.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_up.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_dn.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_ft.jpg"),
-                    FileSystem::getPath("resources/textures/skybox/meadow_bk.jpg")
+                    FileSystem::getPath("resources/textures/skybox/left.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/right.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/top.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/bottom.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/front.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/back.jpg")
             };
 
 
-
-    unsigned int cubemapTexture2 = loadCubemap(faces2);
     unsigned int cubemapTexture = loadCubemap(faces);
-
 
     shaderSkybox.use();
     shaderSkybox.setInt("skybox", 0);
@@ -350,7 +344,8 @@ int main() {
     Model modelDrvo("resources/objects/tree/scene.gltf");
     Model modelCvece("resources/objects/flowers/scene.gltf");
     Model modelPalcica("resources/objects/yona_jinn/scene.gltf");
-    //Model modelBalon("resources/objects/classic_muscle_car/scene.gltf");
+    Model modelFenjer("resources/objects/lantern/scene.gltf");
+    Model modelOstrvo("resources/objects/floating_island/scene.gltf");
 
     modelPcele.SetShaderTextureNamePrefix("material.");
     modelZec.SetShaderTextureNamePrefix("material.");
@@ -358,7 +353,21 @@ int main() {
     modelTrellis.SetShaderTextureNamePrefix("material.");
     modelDrvo.SetShaderTextureNamePrefix("material.");
     modelCvece.SetShaderTextureNamePrefix("material.");
-//    modelBalon.SetShaderTextureNamePrefix("material.");
+    modelPalcica.SetShaderTextureNamePrefix("material.");
+    modelFenjer.SetShaderTextureNamePrefix("material.");
+    modelOstrvo.SetShaderTextureNamePrefix("material.");
+
+
+    unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/ocean_colour_plain.png").c_str());
+    unsigned int normalMap  = loadTexture(FileSystem::getPath("resources/textures/ocean_normal.png").c_str());
+    //unsigned int specularMap = loadTexture(FileSystem::getPath("resources/textures/specular.png").c_str());
+    unsigned int depthMap = loadTexture(FileSystem::getPath("resources/textures/ocean_spray.png").c_str());
+
+    shaderNormal.use();
+    shaderNormal.setInt("diffuseMap", 0);
+    shaderNormal.setInt("normalMap", 1);
+   // shaderNormal.setInt("specularMap", 2);
+    shaderNormal.setInt("depthMap", 3);
 
     //lights
 //directional
@@ -375,7 +384,7 @@ int main() {
     spotlight.direction = programState->camera.Front;
     spotlight.ambient = glm::vec3(0.f);
     spotlight.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
-    spotlight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    spotlight.specular = glm::vec3(2.0f, 2.0f, 2.0f);
     spotlight.cutOff = glm::cos(glm::radians(12.5f));
     spotlight.outerCutOff = glm::cos(glm::radians(15.0f));
     spotlight.constant = 1.0f;
@@ -410,12 +419,18 @@ int main() {
         // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        //shaderModel.use();
-        glm::mat4 model = glm::mat4(1.0f);
+        
         glm::mat4 view = programState->camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
+        glm::mat4 model = glm::mat4(1.0f);
+
+
+        pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f);
+
+
+        shaderModel.use();
+        model = glm::mat4(1.0f);
 
         shaderModel.setMat4("model", model);
         shaderModel.setMat4("view", view);
@@ -428,7 +443,7 @@ int main() {
         shaderModel.use();
 
         //pointlight
-        pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f); //svetli palcica koja se pomera gore dole
+        //pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f); //svetli palcica koja se pomera gore dole
         shaderModel.setVec3("pointLight.position", pointLight.position);
         shaderModel.setVec3("pointLight.ambient", pointLight.ambient);
         shaderModel.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -443,7 +458,7 @@ int main() {
         shaderModel.setVec3("spotLight.position", programState->camera.Position);
         shaderModel.setVec3("spotLight.direction", programState->camera.Front);
         shaderModel.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-        shaderModel.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        shaderModel.setVec3("spotLight.diffuse", 2.0f, 2.0f, 2.0f);
         shaderModel.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
         shaderModel.setFloat("spotLight.constant", 1.0f);
         shaderModel.setFloat("spotLight.linear", 0.09);
@@ -479,92 +494,76 @@ int main() {
         model = glm::mat4(1.0f);
 
         //pcela
-        model = glm::translate(model, glm::vec3(3*cos(glfwGetTime()),  abs(sin(glfwGetTime())),  3*sin(glfwGetTime()))); // translate it down so it's at the center of the scene
+        model = glm::translate(model, glm::vec3(3*cos(glfwGetTime()),  abs(sin(glfwGetTime()))+0.4f,  3*sin(glfwGetTime()))); // translate it down so it's at the center of the scene
         model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, -1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.00015f));    // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelPcele.Draw(shaderModel);
 
+        //prvi i drugi cvet dodiruje pcela
+        std::vector<float> z_coords_narcis = {0.0f, 0.0f, 1.0f, -2.0f};
+        std::vector<float> x_coords_narcis = {3.0f, -3.0f, 0.0f, -2.0f};
 
-        //prvi cvet
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(3.0f, -0.8f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCveta.Draw(shaderModel);
+        for(int i = 0; i < 4; i++){
+            model = glm::mat4(1.0f);
+            model= glm::translate(model, glm::vec3(x_coords_narcis[i], -0.4f, z_coords_narcis[i])); // translate it down so it's at the center of the scene
+            if(i == 1){
+                model = glm::rotate(model, 90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+            }
+            model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
+            shaderModel.setMat4("model", model);
+            modelCveta.Draw(shaderModel);
+        }
 
-        //drugi cvet
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(-3.0f, -0.8f, 0.0f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCveta.Draw(shaderModel);
-
-        //treci cvet
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(0.0f, -0.8f, 1.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCveta.Draw(shaderModel);
-
-        //cetvrti cvet
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(-2.0f, -0.8f, -2.0f)); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCveta.Draw(shaderModel);
+        std::vector<float> z_coords_drvo = {-3.0f, 3.0f};
+        std::vector<float> x_coords_drvo = {-4.0f, -21.0f};
 
         //drvo
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(-4.0f, -0.8f, -3.0f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 1.571f, glm::vec3(-1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.03f));    // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelDrvo.Draw(shaderModel);
+        for(int i = 0; i < 2; i++){
+            model = glm::mat4(1.0f);
+            model= glm::translate(model, glm::vec3(x_coords_drvo[i], -0.4f, z_coords_drvo[i])); // translate it down so it's at the center of the scene
+            model = glm::rotate(model, 1.571f, glm::vec3(-1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.03f));    // it's a bit too big for our scene, so scale it down
+            shaderModel.setMat4("model", model);
+            modelDrvo.Draw(shaderModel);
+        }
 
         //zec
         model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(4.6f, -0.8f, -5.2f)); // translate it down so it's at the center of the scene
+        model= glm::translate(model, glm::vec3(4.6f, -0.4f, -5.2f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.3f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelZec.Draw(shaderModel);
 
         //trellis
         model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(4.6f, -0.8f, -5.2f)); // translate it down so it's at the center of the scene
+        model= glm::translate(model, glm::vec3(4.6f, -0.4f, -5.2f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.01f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelTrellis.Draw(shaderModel);
 
+
         //cvece
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(1.0f, -0.8f, -3.0f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCvece.Draw(shaderModel);
+        std::vector<float> z_coords_bele_rade = {-3.0f, -1.5f, 3.0f};
+        std::vector<float> x_coords_bele_rade = {1.0f, 7.0f, -15.0f};
 
-        //cvece 2
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(-3.0f, -0.8f, -5.0f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCvece.Draw(shaderModel);
+        for(int i = 0; i < 3; i++) {
+            model = glm::mat4(1.0f);
+            if(i == 2){
+                model= glm::translate(model, glm::vec3(x_coords_bele_rade[i], -0.0f, z_coords_bele_rade[i])); // translate it down so it's at the center of the scene
+            } else{
+                model= glm::translate(model, glm::vec3(x_coords_bele_rade[i], -0.4f, z_coords_bele_rade[i])); // translate it down so it's at the center of the scene
+            }
+            model = glm::rotate(model, 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
+            shaderModel.setMat4("model", model);
+            modelCvece.Draw(shaderModel);
+        }
 
-        //cvece 3
-        model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(7.0f, -0.8f, -1.5f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
-        shaderModel.setMat4("model", model);
-        modelCvece.Draw(shaderModel);
-//
         //palcica
         model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(7.0f, abs(sin(glfwGetTime()))-2.0f, -1.5f)); // translate it down so it's at the center of the scene
-        model = glm::rotate(model, 2*abs(sin((float)glfwGetTime())), glm::vec3(0.0f, 1.0f, 0.0f));
+        model= glm::translate(model, glm::vec3(7.0f, abs(sin(glfwGetTime()))-1.6f, -1.5f)); // translate it down so it's at the center of the scene
+        model = glm::rotate(model, 8*abs(sin((float)glfwGetTime())), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelPalcica.Draw(shaderModel);
@@ -574,38 +573,117 @@ int main() {
         shaderCube.setMat4("view", view);
         shaderCube.setMat4("projection", projection);
         model = glm::mat4(1.0f);
-        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.2f));
+        model = glm::translate(model, glm::vec3(3.09f, 1.35f, -3.8f));
+        model = glm::scale(model, glm::vec3(0.05f));
         shaderCube.setMat4("model", model);
-
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
 
-        //skybox
+        //cube mora pre fenjera da bi se prikazivala kocka unutra fenjera
+        shaderModel.use();
+        //fenjer
+        model = glm::mat4(1.0f);
+        model= glm::translate(model, glm::vec3(3.09f, 1.222f, -3.8f)); // translate it down so it's at the center of the scene
+        model = glm::rotate(model, 1.57f, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(2.9f));   // it's a bit too big for our scene, so scale it down
+        shaderModel.setMat4("model", model);
+        modelFenjer.Draw(shaderModel);
 
-        glDepthFunc(GL_LEQUAL);
-        shaderSkybox.use();
-        shaderSkybox.setMat4("view", glm::mat4(glm::mat3(view)));
-        shaderSkybox.setMat4("projection", projection);
-        glBindVertexArray(skyboxVAO);
-        glActiveTexture(GL_TEXTURE0);
-        if(nightMode) {
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+        //ostrvo
+        model = glm::mat4(1.0f);
+        model= glm::translate(model, glm::vec3(-1.09f, -3.9f, -3.8f)); // translate it down so it's at the center of the scen
+        model = glm::scale(model, glm::vec3(0.2));   // it's a bit too big for our scene, so scale it down
+        shaderModel.setMat4("model", model);
+        modelOstrvo.Draw(shaderModel);
+
+
+        shaderNormal.use();
+        shaderNormal.setMat4("projection", projection);
+        shaderNormal.setMat4("view", view);
+        model = glm::mat4(1.0f);
+
+        shaderNormal.setMat4("model", model);
+        shaderNormal.setVec3("viewPos", programState->camera.Position);
+
+        shaderNormal.setVec3("pointLight.position", pointLight.position);
+        shaderNormal.setVec3("pointLight.ambient", pointLight.ambient);
+        shaderNormal.setVec3("pointLight.diffuse", pointLight.diffuse);
+        shaderNormal.setVec3("pointLight.specular", pointLight.specular);
+        shaderNormal.setFloat("pointLight.constant", pointLight.constant);
+        shaderNormal.setFloat("pointLight.linear", pointLight.linear);
+        shaderNormal.setFloat("pointLight.quadratic", pointLight.quadratic);
+
+        //spotlight
+        shaderNormal.setVec3("spotLight.position", programState->camera.Position);
+        shaderNormal.setVec3("spotLight.direction", programState->camera.Front);
+        shaderNormal.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+        shaderNormal.setVec3("spotLight.diffuse", 2.0f, 2.0f, 2.0f);
+        shaderNormal.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        shaderNormal.setFloat("spotLight.constant", 1.0f);
+        shaderNormal.setFloat("spotLight.linear", 0.09);
+        shaderNormal.setFloat("spotLight.quadratic", 0.032);
+        shaderNormal.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        shaderNormal.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+        //dirLight
+        if (nightMode) {
+            directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
+            directional.ambient = glm::vec3(0.00f);
+            directional.diffuse = glm::vec3(0.0f);
+            directional.specular = glm::vec3(0.0f);
         }
         else{
-            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture2);
+            directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
+            directional.ambient = glm::vec3(0.80f);
+            directional.diffuse = glm::vec3(0.4f);
+            directional.specular = glm::vec3(0.5f);
         }
-        glDrawArrays(GL_TRIANGLES, 0, 36);
-        glBindVertexArray(0);
-        glDepthFunc(GL_LESS);
+        shaderNormal.setVec3("dirLight.direction", directional.direction);
+        shaderNormal.setVec3("dirLight.ambient", directional.ambient);
+        shaderNormal.setVec3("dirLight.diffuse", directional.diffuse);
+        shaderNormal.setVec3("dirLight.specular", directional.specular);
+        // view/projection transformations
 
+        shaderNormal.setBool("blinn", blinn);
+
+        shaderNormal.setFloat("heightScale", heightScale);
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, normalMap);
+        glActiveTexture(GL_TEXTURE2);
+        //glBindTexture(GL_TEXTURE_2D, specularMap);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, depthMap);
+
+        renderQuad();
+
+
+        //skybox
+        if(!nightMode) {
+            glDepthFunc(GL_LEQUAL);
+            shaderSkybox.use();
+            shaderSkybox.setMat4("view", glm::mat4(glm::mat3(view)));
+            shaderSkybox.setMat4("projection", projection);
+            glBindVertexArray(skyboxVAO);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+            glBindVertexArray(0);
+            glDepthFunc(GL_LESS);
+        }
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);        glfwPollEvents();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
     programState->SaveToFile("resources/program_state.txt");
@@ -615,6 +693,13 @@ int main() {
     ImGui::DestroyContext();
     // glfw: terminate, clearing all previously allocated GLFW resources.
     // ------------------------------------------------------------------
+
+    glDeleteVertexArrays(1, &skyboxVAO);
+    glDeleteBuffers(1, &skyboxVBO);
+    glDeleteVertexArrays(1, &cubeVAO);
+    glDeleteBuffers(1, &cubeVBO);
+
+
     glfwTerminate();
     return 0;
 }
@@ -721,6 +806,21 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
     if(glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS){
         blinn = !blinn;
     }
+    if(glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS){
+        if(heightScale > 0.0f){
+            heightScale -= 0.0005f;
+        } else {
+            heightScale = 0.0f;
+        }
+    }
+    if(glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS){
+        if(heightScale < 1.0f){
+            heightScale += 0.0005f;
+        } else {
+            heightScale = 1.0f;
+        }
+    }
+
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -753,3 +853,128 @@ unsigned int loadCubemap(vector<std::string> faces)
     return textureID;
 }
 
+unsigned int loadTexture(char const * path)
+{
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); // for this tutorial: use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes texels from next repeat
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+    }
+
+    return textureID;
+}
+unsigned int quadVAO = 0;
+unsigned int quadVBO;
+void renderQuad()
+{
+    if (quadVAO == 0)
+    {
+        // positions
+        glm::vec3 pos1(80.0f,  -0.8f, 80.0f);
+        glm::vec3 pos2(80.0f, -0.8f, -80.0f);
+        glm::vec3 pos3( -80.0f, -0.8f, -80.0f);
+        glm::vec3 pos4( -80.0f,  -0.8f, 80.0f);
+        // texture coordinates
+        glm::vec2 uv1(0.0f, 1.0f);
+        glm::vec2 uv2(0.0f, 0.0f);
+        glm::vec2 uv3(1.0f, 0.0f);
+        glm::vec2 uv4(1.0f, 1.0f);
+        // normal vector
+        glm::vec3 nm(0.0f, 0.0f, 1.0f);
+
+        // calculate tangent/bitangent vectors of both triangles
+        glm::vec3 tangent1, bitangent1;
+        glm::vec3 tangent2, bitangent2;
+        // triangle 1
+        // ----------
+        glm::vec3 edge1 = pos2 - pos1;
+        glm::vec3 edge2 = pos3 - pos1;
+        glm::vec2 deltaUV1 = uv2 - uv1;
+        glm::vec2 deltaUV2 = uv3 - uv1;
+
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+        bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+        // triangle 2
+        // ----------
+        edge1 = pos3 - pos1;
+        edge2 = pos4 - pos1;
+        deltaUV1 = uv3 - uv1;
+        deltaUV2 = uv4 - uv1;
+
+        f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+
+
+        bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+
+
+        float quadVertices[] = {
+                // positions            // normal         // texcoords  // tangent                          // bitangent
+                pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+                pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+                pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+
+                pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+                pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+                pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+        };
+        // configure plane VAO
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+    }
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
