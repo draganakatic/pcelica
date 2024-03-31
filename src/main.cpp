@@ -25,6 +25,7 @@ void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
 unsigned int loadCubemap(vector<std::string> faces);
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -35,6 +36,9 @@ const unsigned int SCR_HEIGHT = 600;
 float lastX = SCR_WIDTH / 2.0f;
 float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
+
+bool blinn = false;
+bool BKeyPressed = false;
 
 // timing
 float deltaTime = 0.0f;
@@ -49,6 +53,29 @@ struct PointLight {
     float constant;
     float linear;
     float quadratic;
+};
+
+struct DirLight {
+    glm::vec3 direction;
+
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
+
+struct SpotLight {
+    glm::vec3 position;
+    glm::vec3 direction;
+    float cutOff;
+    float outerCutOff;
+
+    float constant;
+    float linear;
+    float quadratic;
+
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
 };
 
 struct ProgramState {
@@ -100,7 +127,7 @@ void ProgramState::LoadFromFile(std::string filename) {
 ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
-
+bool nightMode = false;
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -159,10 +186,64 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
+    //face culling <3
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+
+    //blend <3
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     // build and compile shaders
     // -------------------------
     Shader shaderModel("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader shaderSkybox("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+    Shader shaderCube("resources/shaders/cube.vs", "resources/shaders/cube.fs");
+
+    float cubeVertices[] = {
+            // positions          // normals
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    };
 
     float skyboxVertices[] = {
             // positions
@@ -209,6 +290,19 @@ int main() {
             1.0f, -1.0f,  1.0f
     };
 
+    // cube VAO
+    unsigned int cubeVAO, cubeVBO;
+    glGenVertexArrays(1, &cubeVAO);
+    glGenBuffers(1, &cubeVBO);
+    glBindVertexArray(cubeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), &cubeVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+
     unsigned int skyboxVAO, skyboxVBO;
     glGenVertexArrays(1, &skyboxVAO);
     glGenBuffers(1, &skyboxVBO);
@@ -228,12 +322,25 @@ int main() {
                     FileSystem::getPath("resources/textures/skybox/meadow_ft.jpg"),
                     FileSystem::getPath("resources/textures/skybox/meadow_bk.jpg")
             };
+
+    vector<std::string> faces2
+            {
+                    FileSystem::getPath("resources/textures/skybox/meadow_lf.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/meadow_rt.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/meadow_up.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/meadow_dn.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/meadow_ft.jpg"),
+                    FileSystem::getPath("resources/textures/skybox/meadow_bk.jpg")
+            };
+
+
+
+    unsigned int cubemapTexture2 = loadCubemap(faces2);
     unsigned int cubemapTexture = loadCubemap(faces);
+
 
     shaderSkybox.use();
     shaderSkybox.setInt("skybox", 0);
-
-
     // load models
     // -----------
     Model modelPcele("resources/objects/bee/scene.gltf");
@@ -242,22 +349,48 @@ int main() {
     Model modelTrellis("resources/objects/trellis/scene.gltf");
     Model modelDrvo("resources/objects/tree/scene.gltf");
     Model modelCvece("resources/objects/flowers/scene.gltf");
-
+    Model modelPalcica("resources/objects/yona_jinn/scene.gltf");
+    //Model modelBalon("resources/objects/classic_muscle_car/scene.gltf");
 
     modelPcele.SetShaderTextureNamePrefix("material.");
+    modelZec.SetShaderTextureNamePrefix("material.");
+    modelCveta.SetShaderTextureNamePrefix("material.");
+    modelTrellis.SetShaderTextureNamePrefix("material.");
+    modelDrvo.SetShaderTextureNamePrefix("material.");
+    modelCvece.SetShaderTextureNamePrefix("material.");
+//    modelBalon.SetShaderTextureNamePrefix("material.");
 
-    /*
+    //lights
+//directional
+
+    DirLight directional;
+    directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
+    directional.ambient = glm::vec3(0.09f);
+    directional.diffuse = glm::vec3(0.4f);
+    directional.specular = glm::vec3(0.5f);
+
+//spotlight
+    SpotLight spotlight;
+    spotlight.position = programState->camera.Position;
+    spotlight.direction = programState->camera.Front;
+    spotlight.ambient = glm::vec3(0.f);
+    spotlight.diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+    spotlight.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+    spotlight.cutOff = glm::cos(glm::radians(12.5f));
+    spotlight.outerCutOff = glm::cos(glm::radians(15.0f));
+    spotlight.constant = 1.0f;
+    spotlight.linear = 0.09f;
+    spotlight.quadratic = 0.032f;
+
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
+    pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime()))-2.0f, -1.5f);
+    pointLight.ambient = glm::vec3(0.2, 0.2, 0.2);
+    pointLight.diffuse = glm::vec3(0.90, 0.80, 0.0);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
-
-    */
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -294,7 +427,8 @@ int main() {
 
         shaderModel.use();
 
-        /* pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
+        //pointlight
+        pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f); //svetli palcica koja se pomera gore dole
         shaderModel.setVec3("pointLight.position", pointLight.position);
         shaderModel.setVec3("pointLight.ambient", pointLight.ambient);
         shaderModel.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -303,8 +437,40 @@ int main() {
         shaderModel.setFloat("pointLight.linear", pointLight.linear);
         shaderModel.setFloat("pointLight.quadratic", pointLight.quadratic);
         shaderModel.setVec3("viewPosition", programState->camera.Position);
-        shaderModel.setFloat("material.shininess", 32.0f);*/
+        shaderModel.setFloat("material.shininess", 32.0f);
+
+        //spotlight
+        shaderModel.setVec3("spotLight.position", programState->camera.Position);
+        shaderModel.setVec3("spotLight.direction", programState->camera.Front);
+        shaderModel.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+        shaderModel.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        shaderModel.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        shaderModel.setFloat("spotLight.constant", 1.0f);
+        shaderModel.setFloat("spotLight.linear", 0.09);
+        shaderModel.setFloat("spotLight.quadratic", 0.032);
+        shaderModel.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        shaderModel.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+
+        //dirLight
+        if (nightMode) {
+            directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
+            directional.ambient = glm::vec3(0.00f);
+            directional.diffuse = glm::vec3(0.0f);
+            directional.specular = glm::vec3(0.0f);
+        }
+        else{
+            directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
+            directional.ambient = glm::vec3(0.80f);
+            directional.diffuse = glm::vec3(0.4f);
+            directional.specular = glm::vec3(0.5f);
+        }
+        shaderModel.setVec3("dirLight.direction", directional.direction);
+        shaderModel.setVec3("dirLight.ambient", directional.ambient);
+        shaderModel.setVec3("dirLight.diffuse", directional.diffuse);
+        shaderModel.setVec3("dirLight.specular", directional.specular);
         // view/projection transformations
+
+        shaderModel.setBool("blinn", blinn);
 
         shaderModel.setMat4("projection", projection);
         shaderModel.setMat4("view", view);
@@ -318,6 +484,7 @@ int main() {
         model = glm::scale(model, glm::vec3(0.00015f));    // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelPcele.Draw(shaderModel);
+
 
         //prvi cvet
         model = glm::mat4(1.0f);
@@ -393,6 +560,29 @@ int main() {
         model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelCvece.Draw(shaderModel);
+//
+        //palcica
+        model = glm::mat4(1.0f);
+        model= glm::translate(model, glm::vec3(7.0f, abs(sin(glfwGetTime()))-2.0f, -1.5f)); // translate it down so it's at the center of the scene
+        model = glm::rotate(model, 2*abs(sin((float)glfwGetTime())), glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(1.0f));   // it's a bit too big for our scene, so scale it down
+        shaderModel.setMat4("model", model);
+        modelPalcica.Draw(shaderModel);
+
+        //cube
+        shaderCube.use();
+        shaderCube.setMat4("view", view);
+        shaderCube.setMat4("projection", projection);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.2f));
+        shaderCube.setMat4("model", model);
+
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+
+        //skybox
 
         glDepthFunc(GL_LEQUAL);
         shaderSkybox.use();
@@ -400,7 +590,12 @@ int main() {
         shaderSkybox.setMat4("projection", projection);
         glBindVertexArray(skyboxVAO);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        if(nightMode) {
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        }
+        else{
+            glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture2);
+        }
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
         glDepthFunc(GL_LESS);
@@ -410,8 +605,7 @@ int main() {
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        glfwSwapBuffers(window);        glfwPollEvents();
     }
 
     programState->SaveToFile("resources/program_state.txt");
@@ -439,6 +633,7 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -518,6 +713,13 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
+    }
+    if (key == GLFW_KEY_N && action == GLFW_PRESS) {
+        nightMode = !nightMode;
+    }
+    //blinn
+    if(glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS){
+        blinn = !blinn;
     }
 }
 
