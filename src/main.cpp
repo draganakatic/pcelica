@@ -32,6 +32,8 @@ unsigned int loadCubemap(vector<std::string> faces);
 
 void renderQuad();
 
+void renderKvadrat();
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -43,8 +45,11 @@ float lastY = SCR_HEIGHT / 2.0f;
 bool firstMouse = true;
 
 bool blinn = false;
-float heightScale = 0.1;
-bool BKeyPressed = false;
+float heightScale = 0.0;
+bool hdr = true;
+float exposure = 0.2f;
+bool bloom = true;
+
 
 // timing
 float deltaTime = 0.0f;
@@ -134,6 +139,7 @@ ProgramState *programState;
 
 void DrawImGui(ProgramState *programState);
 bool nightMode = false;
+
 int main() {
     // glfw: initialize and configure
     // ------------------------------
@@ -148,7 +154,7 @@ int main() {
 
     // glfw window creation
     // --------------------
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "zasto vredna pcelica kidise na cveT", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "pcelica i palcica", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -192,9 +198,9 @@ int main() {
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
 
-    //face culling ne radi pod sa njim, ako treba ukljuci
-    //glEnable(GL_CULL_FACE);
-    //glCullFace(GL_BACK);
+    //face culling => ne radi kockica sa njim, iz odredjenog ugla ne prikazuje sve stranice
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     //blend za bele cvetove po livadi i za fenjer okacen o trem iznad zeca
     glEnable(GL_BLEND);
@@ -206,50 +212,53 @@ int main() {
     Shader shaderSkybox("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
     Shader shaderCube("resources/shaders/cube.vs", "resources/shaders/cube.fs");
     Shader shaderNormal("resources/shaders/normal.vs", "resources/shaders/normal.fs");
+    Shader shaderBlur("resources/shaders/blur.vs", "resources/shaders/blur.fs");
+    Shader shaderFinal("resources/shaders/final.vs", "resources/shaders/final.fs");
 
     float cubeVertices[] = {
-            // positions          // normals
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+            // back face
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, // bottom-left
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, // top-right
+            1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  // bottom-right
+            1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  // top-right
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  // bottom-left
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f,  // top-left
+            // front face
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // bottom-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // top-right
+            1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // top-right
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // top-left
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f,  // bottom-left
+            // left face
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f,  // top-right
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  // top-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, // bottom-left
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f,  // bottom-left
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, // bottom-right
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f,  // top-right
+            // right face
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  // top-left
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  // bottom-right
+            1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  // top-right
+            1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  // bottom-right
+            1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  // top-left
+            1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  // bottom-left
+            // bottom face
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  // top-right
+            1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  // top-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  // bottom-left
+            1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  // bottom-left
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f,  // bottom-right
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f,  // top-right
+            // top face
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  // top-left
+            1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f,  // bottom-right
+            1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  // top-right
+            1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  // bottom-right
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f,  // top-left
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,   // bottom-left
 
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
     };
 
     float skyboxVertices[] = {
@@ -297,6 +306,66 @@ int main() {
             1.0f, -1.0f,  1.0f
     };
 
+
+    //bloom i hdr
+
+    unsigned int hdrFBO;
+    glGenFramebuffers(1, &hdrFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+    // create 2 floating point color buffers (1 for normal rendering, other for brightness threshold values)
+    unsigned int colorBuffers[2];
+    glGenTextures(2, colorBuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // we clamp to the edge as the blur filter would otherwise sample repeated texture values!
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        // attach texture to framebuffer
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, colorBuffers[i], 0);
+    }
+    // create and attach depth buffer (renderbuffer)
+    unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SCR_WIDTH, SCR_HEIGHT);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+    unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+    //check if framebuffer is complete
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Framebuffer not complete!" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    // ping-pong-framebuffer for blurring
+    unsigned int pingpongFBO[2];
+    unsigned int pingpongColorbuffers[2];
+    glGenFramebuffers(2, pingpongFBO);
+    glGenTextures(2, pingpongColorbuffers);
+    for (unsigned int i = 0; i < 2; i++)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[i]);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pingpongColorbuffers[i], 0);
+        //check if framebuffers are complete
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+            std::cout << "Framebuffer not complete!" << std::endl;
+    }
+
+
+    shaderFinal.use();
+    shaderFinal.setInt("scene", 0);
+    shaderFinal.setInt("bloomBlur", 1);
+    shaderBlur.use();
+    shaderBlur.setInt("image", 0);
+
     // cube VAO
     unsigned int cubeVAO, cubeVBO;
     glGenVertexArrays(1, &cubeVAO);
@@ -319,7 +388,7 @@ int main() {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 
-
+    //stranice za skybox
     vector<std::string> faces
             {
                     FileSystem::getPath("resources/textures/skybox/left.jpg"),
@@ -346,6 +415,9 @@ int main() {
     Model modelPalcica("resources/objects/yona_jinn/scene.gltf");
     Model modelFenjer("resources/objects/lantern/scene.gltf");
     Model modelOstrvo("resources/objects/floating_island/scene.gltf");
+    //Model modelZabica("resources/objects/frog/scene.gltf");
+    Model modelGaleb("resources/objects/seagull/scene.gltf");
+    Model modelGaleb2("resources/objects/derpy_seagull/scene.gltf");
 
     modelPcele.SetShaderTextureNamePrefix("material.");
     modelZec.SetShaderTextureNamePrefix("material.");
@@ -356,6 +428,8 @@ int main() {
     modelPalcica.SetShaderTextureNamePrefix("material.");
     modelFenjer.SetShaderTextureNamePrefix("material.");
     modelOstrvo.SetShaderTextureNamePrefix("material.");
+    modelGaleb.SetShaderTextureNamePrefix("material.");
+    modelGaleb2.SetShaderTextureNamePrefix("material.");
 
 
     unsigned int diffuseMap = loadTexture(FileSystem::getPath("resources/textures/ocean_colour_plain.png").c_str());
@@ -371,12 +445,11 @@ int main() {
 
     //lights
 //directional
-
     DirLight directional;
     directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
-    directional.ambient = glm::vec3(0.09f);
-    directional.diffuse = glm::vec3(0.4f);
-    directional.specular = glm::vec3(0.5f);
+    directional.ambient = glm::vec3(1.0f, 1.0f, 0.7);
+    directional.diffuse = glm::vec3(1.0f, 1.0f, 0.7);
+    directional.specular = glm::vec3(1.0f, 1.0f, 0.7);
 
 //spotlight
     SpotLight spotlight;
@@ -391,15 +464,24 @@ int main() {
     spotlight.linear = 0.09f;
     spotlight.quadratic = 0.032f;
 
-    PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime()))-2.0f, -1.5f);
-    pointLight.ambient = glm::vec3(0.2, 0.2, 0.2);
-    pointLight.diffuse = glm::vec3(0.90, 0.80, 0.0);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-
+//pointlights
+    PointLight pointLight; //pointlight za palcicu
+    pointLight.position = glm::vec3(-15.0f, abs(sin(glfwGetTime())), 3.0f);
+    pointLight.ambient = glm::vec3(3.0f, 3.0f, 3.0f);
+    pointLight.diffuse = glm::vec3(3.0f, 3.0f, 3.0f);
+    pointLight.specular = glm::vec3(3.0f, 3.0f, 3.0f);
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
+
+    PointLight pointLight2; //pointlight za kocku u fenjeru
+    pointLight2.position = glm::vec3(3.09f, 1.35f, -3.8f);
+    pointLight2.ambient = glm::vec3(03.0f, 3.0f, 3.0f);
+    pointLight2.diffuse = glm::vec3(3.0f, 3.0f, 3.0f);
+    pointLight2.specular = glm::vec3(3.0f, 3.0f, 3.0f);
+    pointLight2.constant = 1.0f;
+    pointLight2.linear = 0.09f;
+    pointLight2.quadratic = 0.032f;
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -419,15 +501,14 @@ int main() {
         // ------
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
         glm::mat4 view = programState->camera.GetViewMatrix();
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 model = glm::mat4(1.0f);
-
-
-        pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f);
-
 
         shaderModel.use();
         model = glm::mat4(1.0f);
@@ -436,14 +517,11 @@ int main() {
         shaderModel.setMat4("view", view);
         shaderModel.setMat4("projection", projection);
 
-
-
         // don't forget to enable shader before setting uniforms
 
         shaderModel.use();
 
-        //pointlight
-        //pointLight.position = glm::vec3(7.0f, abs(sin(glfwGetTime())) , -1.5f); //svetli palcica koja se pomera gore dole
+        //POINTLIGHTs
         shaderModel.setVec3("pointLight.position", pointLight.position);
         shaderModel.setVec3("pointLight.ambient", pointLight.ambient);
         shaderModel.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -454,11 +532,21 @@ int main() {
         shaderModel.setVec3("viewPosition", programState->camera.Position);
         shaderModel.setFloat("material.shininess", 32.0f);
 
+        shaderModel.setVec3("pointLight2.position", pointLight2.position);
+        shaderModel.setVec3("pointLight2.ambient", pointLight2.ambient);
+        shaderModel.setVec3("pointLight2.diffuse", pointLight2.diffuse);
+        shaderModel.setVec3("pointLight2.specular", pointLight2.specular);
+        shaderModel.setFloat("pointLight2.constant", pointLight2.constant);
+        shaderModel.setFloat("pointLight2.linear", pointLight2.linear);
+        shaderModel.setFloat("pointLight2.quadratic", pointLight2.quadratic);
+        shaderModel.setVec3("viewPosition", programState->camera.Position);
+        shaderModel.setFloat("material.shininess", 32.0f);
+
         //spotlight
         shaderModel.setVec3("spotLight.position", programState->camera.Position);
         shaderModel.setVec3("spotLight.direction", programState->camera.Front);
-        shaderModel.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-        shaderModel.setVec3("spotLight.diffuse", 2.0f, 2.0f, 2.0f);
+        shaderModel.setVec3("spotLight.ambient", 1.0f, 1.0f, 1.0f);
+        shaderModel.setVec3("spotLight.diffuse", 4.5f, 4.5f, 4.5f);
         shaderModel.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
         shaderModel.setFloat("spotLight.constant", 1.0f);
         shaderModel.setFloat("spotLight.linear", 0.09);
@@ -466,7 +554,7 @@ int main() {
         shaderModel.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
         shaderModel.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
 
-        //dirLight
+        //dirLight => ako je mrak, nema dirlight-a, ako je dan onda ima
         if (nightMode) {
             directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
             directional.ambient = glm::vec3(0.00f);
@@ -475,9 +563,9 @@ int main() {
         }
         else{
             directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
-            directional.ambient = glm::vec3(0.80f);
-            directional.diffuse = glm::vec3(0.4f);
-            directional.specular = glm::vec3(0.5f);
+            directional.ambient = glm::vec3(3.0f, 3.0f, 2.7);
+            directional.diffuse = glm::vec3(3.0f, 3.0f, 2.7);
+            directional.specular = glm::vec3(3.0f, 3.0f, 2.7);
         }
         shaderModel.setVec3("dirLight.direction", directional.direction);
         shaderModel.setVec3("dirLight.ambient", directional.ambient);
@@ -493,32 +581,32 @@ int main() {
         // render the loaded model
         model = glm::mat4(1.0f);
 
-        //pcela
+        //pcelica
         model = glm::translate(model, glm::vec3(3*cos(glfwGetTime()),  abs(sin(glfwGetTime()))+0.4f,  3*sin(glfwGetTime()))); // translate it down so it's at the center of the scene
         model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, -1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.00015f));    // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelPcele.Draw(shaderModel);
 
-        //prvi i drugi cvet dodiruje pcela
+        //prvi i drugi cve dodiruje pcela
         std::vector<float> z_coords_narcis = {0.0f, 0.0f, 1.0f, -2.0f};
         std::vector<float> x_coords_narcis = {3.0f, -3.0f, 0.0f, -2.0f};
 
         for(int i = 0; i < 4; i++){
             model = glm::mat4(1.0f);
-            model= glm::translate(model, glm::vec3(x_coords_narcis[i], -0.4f, z_coords_narcis[i])); // translate it down so it's at the center of the scene
+            model= glm::translate(model, glm::vec3(x_coords_narcis[i], -0.4f, z_coords_narcis[i]));
             if(i == 1){
+                //drugi cvet malo zarotiramo da bi pcela stala tacno na laticu
                 model = glm::rotate(model, 90.0f, glm::vec3(0.0f, 1.0f, 0.0f));
             }
-            model = glm::scale(model, glm::vec3(0.01f));    // it's a bit too big for our scene, so scale it down
+            model = glm::scale(model, glm::vec3(0.01f));
             shaderModel.setMat4("model", model);
             modelCveta.Draw(shaderModel);
         }
-
+        //drvo
         std::vector<float> z_coords_drvo = {-3.0f, 3.0f};
         std::vector<float> x_coords_drvo = {-4.0f, -21.0f};
 
-        //drvo
         for(int i = 0; i < 2; i++){
             model = glm::mat4(1.0f);
             model= glm::translate(model, glm::vec3(x_coords_drvo[i], -0.4f, z_coords_drvo[i])); // translate it down so it's at the center of the scene
@@ -535,25 +623,21 @@ int main() {
         shaderModel.setMat4("model", model);
         modelZec.Draw(shaderModel);
 
-        //trellis
+        //trem iznad zeke
         model = glm::mat4(1.0f);
         model= glm::translate(model, glm::vec3(4.6f, -0.4f, -5.2f)); // translate it down so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.01f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelTrellis.Draw(shaderModel);
 
-
         //cvece
         std::vector<float> z_coords_bele_rade = {-3.0f, -1.5f, 3.0f};
         std::vector<float> x_coords_bele_rade = {1.0f, 7.0f, -15.0f};
+        std::vector<float> y_coords_bele_rade = {-0.4f, -0.4f, 0.1f};
 
         for(int i = 0; i < 3; i++) {
             model = glm::mat4(1.0f);
-            if(i == 2){
-                model= glm::translate(model, glm::vec3(x_coords_bele_rade[i], -0.0f, z_coords_bele_rade[i])); // translate it down so it's at the center of the scene
-            } else{
-                model= glm::translate(model, glm::vec3(x_coords_bele_rade[i], -0.4f, z_coords_bele_rade[i])); // translate it down so it's at the center of the scene
-            }
+            model= glm::translate(model, glm::vec3(x_coords_bele_rade[i], y_coords_bele_rade[i], z_coords_bele_rade[i])); // translate it down so it's at the center of the scene
             model = glm::rotate(model, 1.57f, glm::vec3(1.0f, 0.0f, 0.0f));
             model = glm::scale(model, glm::vec3(0.05f));   // it's a bit too big for our scene, so scale it down
             shaderModel.setMat4("model", model);
@@ -562,19 +646,52 @@ int main() {
 
         //palcica
         model = glm::mat4(1.0f);
-        model= glm::translate(model, glm::vec3(7.0f, abs(sin(glfwGetTime()))-1.6f, -1.5f)); // translate it down so it's at the center of the scene
+        model= glm::translate(model, glm::vec3(-15.0f, abs(sin(glfwGetTime()))-0.6f, 3.0f)); // translate it down so it's at the center of the scene
         model = glm::rotate(model, 8*abs(sin((float)glfwGetTime())), glm::vec3(0.0f, 1.0f, 0.0f));
         model = glm::scale(model, glm::vec3(1.0f));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelPalcica.Draw(shaderModel);
 
-        //cube
+        //zaba -> ipak necu i zabu
+        /*std::vector<float> z_coords_zabice = {0.0f, 0.1f, 2.50f};
+        std::vector<float> x_coords_zabice = {-15.0f, -7.0f, 3.09f};
+        std::vector<float> y_coords_zabice = {0.1f, -0.75f, -0.4f};
+
+        for(int i = 0; i < 1; i++) {
+            model = glm::mat4(1.0f);
+            model= glm::translate(model, glm::vec3(x_coords_zabice[i], y_coords_zabice[i], z_coords_zabice[i])); // translate it down so it's at the center of the scen
+            model = glm::rotate(model, 3.14f, glm::vec3(1.0f, 0.0f, 0.0f));
+            model = glm::scale(model, glm::vec3(0.01f));   // it's a bit too big for our scene, so scale it down
+            shaderModel.setMat4("model", model);
+            modelZabica.Draw(shaderModel);
+        }*/
+
+        //dva galeba bela, prvi na mosticu, drugi na nebu
+        model = glm::mat4(1.0f);
+        model= glm::translate(model, glm::vec3(-7.0f, -0.2f, 0.1f)); // translate it down so it's at the center of the scen
+        model = glm::rotate(model, 0.8f, glm::vec3(0.0f, 1.0f, 0.0f));
+        model = glm::scale(model, glm::vec3(0.5f));   // it's a bit too big for our scene, so scale it down
+        shaderModel.setMat4("model", model);
+        modelGaleb.Draw(shaderModel);
+
+        model = glm::mat4(1.0f);
+        model= glm::translate(model, glm::vec3(3*cos(glfwGetTime())+3.0f, 8.0f, 3*sin(glfwGetTime())+3.0f)); // translate it down so it's at the center of the scen
+        model = glm::rotate(model, 1.57f, glm::vec3(-1.0f, 0.0f, 0.0f));
+        model = glm::rotate(model, 1.57f, glm::vec3(0.0f, 0.0f, -1.0f));
+        model = glm::rotate(model, 1.57f, glm::vec3(0.0f, 0.0f, -1.0f));
+        model = glm::rotate(model, 0.1f, glm::vec3(0.0f, -1.0f, 0.0f));
+        model = glm::rotate(model, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, -1.0f));
+        model = glm::scale(model, glm::vec3(0.1f));   // it's a bit too big for our scene, so scale it down
+        shaderModel.setMat4("model", model);
+        modelGaleb2.Draw(shaderModel);
+
+        //kocka u fenjeru koja svetli
         shaderCube.use();
         shaderCube.setMat4("view", view);
         shaderCube.setMat4("projection", projection);
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(3.09f, 1.35f, -3.8f));
-        model = glm::scale(model, glm::vec3(0.05f));
+        model = glm::scale(model, glm::vec3(0.02f));
         shaderCube.setMat4("model", model);
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -582,7 +699,7 @@ int main() {
 
         //cube mora pre fenjera da bi se prikazivala kocka unutra fenjera
         shaderModel.use();
-        //fenjer
+        //fenjer okacen o trem
         model = glm::mat4(1.0f);
         model= glm::translate(model, glm::vec3(3.09f, 1.222f, -3.8f)); // translate it down so it's at the center of the scene
         model = glm::rotate(model, 1.57f, glm::vec3(-1.0f, 0.0f, 0.0f));
@@ -590,14 +707,12 @@ int main() {
         shaderModel.setMat4("model", model);
         modelFenjer.Draw(shaderModel);
 
-
         //ostrvo
         model = glm::mat4(1.0f);
         model= glm::translate(model, glm::vec3(-1.09f, -3.9f, -3.8f)); // translate it down so it's at the center of the scen
         model = glm::scale(model, glm::vec3(0.2));   // it's a bit too big for our scene, so scale it down
         shaderModel.setMat4("model", model);
         modelOstrvo.Draw(shaderModel);
-
 
         shaderNormal.use();
         shaderNormal.setMat4("projection", projection);
@@ -618,8 +733,8 @@ int main() {
         //spotlight
         shaderNormal.setVec3("spotLight.position", programState->camera.Position);
         shaderNormal.setVec3("spotLight.direction", programState->camera.Front);
-        shaderNormal.setVec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
-        shaderNormal.setVec3("spotLight.diffuse", 2.0f, 2.0f, 2.0f);
+        shaderNormal.setVec3("spotLight.ambient", 1.0f, 1.0f, 1.0f);
+        shaderNormal.setVec3("spotLight.diffuse", 4.5f, 4.5f, 4.5f);
         shaderNormal.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
         shaderNormal.setFloat("spotLight.constant", 1.0f);
         shaderNormal.setFloat("spotLight.linear", 0.09);
@@ -636,9 +751,9 @@ int main() {
         }
         else{
             directional.direction = glm::vec3(5.50f, 5.0f, 5.50f);
-            directional.ambient = glm::vec3(0.80f);
-            directional.diffuse = glm::vec3(0.4f);
-            directional.specular = glm::vec3(0.5f);
+            directional.ambient = glm::vec3(3.0f, 3.0f, 2.7);
+            directional.diffuse = glm::vec3(3.0f, 3.0f, 2.7);
+            directional.specular = glm::vec3(3.0f, 3.0f, 2.7);
         }
         shaderNormal.setVec3("dirLight.direction", directional.direction);
         shaderNormal.setVec3("dirLight.ambient", directional.ambient);
@@ -662,8 +777,7 @@ int main() {
 
         renderQuad();
 
-
-        //skybox
+        //skybox => ako je noc, nebo je crno, ako je dan onda imamo skybox
         if(!nightMode) {
             glDepthFunc(GL_LEQUAL);
             shaderSkybox.use();
@@ -677,6 +791,39 @@ int main() {
             glBindVertexArray(0);
             glDepthFunc(GL_LESS);
         }
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //--------------------------------------------------------------------------------------------
+
+        // blur bright fragments with two-pass Gaussian Blur
+        bool horizontal = true, first_iteration = true;
+        unsigned int amount = 10;
+        shaderBlur.use();
+        for (unsigned int i = 0; i < amount; i++)
+        {
+            glBindFramebuffer(GL_FRAMEBUFFER, pingpongFBO[horizontal]);
+            shaderBlur.setInt("horizontal", horizontal);
+            glBindTexture(GL_TEXTURE_2D, first_iteration ? colorBuffers[1] : pingpongColorbuffers[!horizontal]);
+            renderQuad();
+            horizontal = !horizontal;
+            if (first_iteration)
+                first_iteration = false;
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        shaderFinal.use();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, colorBuffers[0]);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, pingpongColorbuffers[!horizontal]);
+        shaderFinal.setInt("bloom", bloom);
+        shaderFinal.setInt("hdr", hdr);
+        shaderFinal.setFloat("exposure", exposure);
+
+        renderKvadrat();
+
         if (programState->ImGuiEnabled)
             DrawImGui(programState);
 
@@ -821,6 +968,22 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         }
     }
 
+    if(glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS){
+        hdr = !hdr;
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS){
+        exposure -= 0.05;
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS){
+        exposure += 0.05;
+    }
+
+    if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
+        bloom = !bloom;
+    }
+
 }
 
 unsigned int loadCubemap(vector<std::string> faces)
@@ -896,10 +1059,10 @@ void renderQuad()
     if (quadVAO == 0)
     {
         // positions
-        glm::vec3 pos1(80.0f,  -0.8f, 80.0f);
-        glm::vec3 pos2(80.0f, -0.8f, -80.0f);
-        glm::vec3 pos3( -80.0f, -0.8f, -80.0f);
-        glm::vec3 pos4( -80.0f,  -0.8f, 80.0f);
+        glm::vec3 pos1(100.0f,  -0.8f, 100.0f);
+        glm::vec3 pos2(100.0f, -0.8f, -100.0f);
+        glm::vec3 pos3( -100.0f, -0.8f, -100.0f);
+        glm::vec3 pos4( -100.0f,  -0.8f, 100.0f);
         // texture coordinates
         glm::vec2 uv1(0.0f, 1.0f);
         glm::vec2 uv2(0.0f, 0.0f);
@@ -976,5 +1139,34 @@ void renderQuad()
     }
     glBindVertexArray(quadVAO);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+unsigned int kvadVAO = 0;
+unsigned int kvadVBO;
+void renderKvadrat()
+{
+    if (kvadVAO == 0)
+    {
+        float quadVertices[] = {
+                // positions        // texture Coords
+                -1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+                -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+                1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+                1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+        };
+        // setup plane VAO
+        glGenVertexArrays(1, &kvadVAO);
+        glGenBuffers(1, &kvadVBO);
+        glBindVertexArray(kvadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, kvadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    }
+    glBindVertexArray(kvadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
     glBindVertexArray(0);
 }

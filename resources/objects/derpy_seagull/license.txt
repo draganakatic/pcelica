@@ -1,0 +1,11 @@
+Model Information:
+* title:	Derpy Seagull
+* source:	https://sketchfab.com/3d-models/derpy-seagull-91e9c4b64cca4063aaf58efa8f41be75
+* author:	Ray (https://sketchfab.com/xxroomanxx)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Derpy Seagull" (https://sketchfab.com/3d-models/derpy-seagull-91e9c4b64cca4063aaf58efa8f41be75) by Ray (https://sketchfab.com/xxroomanxx) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

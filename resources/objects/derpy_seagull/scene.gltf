@@ -1,0 +1,314 @@
+{
+  "accessors": [
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 83,
+      "max": [
+        9.285070419311523,
+        3.1512699127197266,
+        2.1437199115753174
+      ],
+      "min": [
+        -9.285070419311523,
+        -4.010350227355957,
+        -0.31060001254081726
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 996,
+      "componentType": 5126,
+      "count": 83,
+      "max": [
+        0.9544858932495117,
+        0.9999547600746155,
+        0.9964462518692017
+      ],
+      "min": [
+        -0.9544858932495117,
+        -0.9993178844451904,
+        -0.997940182685852
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 83,
+      "max": [
+        0.9618600010871887,
+        0.9845399856567383
+      ],
+      "min": [
+        0.010979999788105488,
+        0.021810000762343407
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 664,
+      "componentType": 5126,
+      "count": 83,
+      "max": [
+        0.951229989528656,
+        0.9837200045585632
+      ],
+      "min": [
+        0.009879999794065952,
+        0.13428999483585358
+      ],
+      "type": "VEC2"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 138,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Ray (https://sketchfab.com/xxroomanxx)",
+      "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+      "source": "https://sketchfab.com/3d-models/derpy-seagull-91e9c4b64cca4063aaf58efa8f41be75",
+      "title": "Derpy Seagull"
+    },
+    "generator": "Sketchfab-12.68.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 552,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1328,
+      "byteOffset": 552,
+      "byteStride": 8,
+      "name": "floatBufferViews",
+      "target": 34962
+    },
+    {
+      "buffer": 0,
+      "byteLength": 1992,
+      "byteOffset": 1880,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 3872,
+      "uri": "scene.bin"
+    }
+  ],
+  "images": [
+    {
+      "uri": "textures/Material_baseColor.png"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Material",
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0
+        },
+        "roughnessFactor": 0.8209876543209876
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Cube.004_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0,
+            "TEXCOORD_0": 2,
+            "TEXCOORD_1": 3
+          },
+          "indices": 4,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2,
+        4,
+        6,
+        8
+      ],
+      "name": "Root"
+    },
+    {
+      "children": [
+        3
+      ],
+      "matrix": [
+        0.8308000000000001,
+        0.55657,
+        -0.0,
+        0.0,
+        0.5361400000000001,
+        -0.8003,
+        0.26845,
+        0.0,
+        0.14941000000000004,
+        -0.22302000000000002,
+        -0.9632900000000001,
+        0.0,
+        -0.28874,
+        -4.27723,
+        -9.93225,
+        1.0
+      ],
+      "name": "Sun"
+    },
+    {
+      "name": "Sun"
+    },
+    {
+      "children": [
+        5
+      ],
+      "matrix": [
+        -0.6914500000000001,
+        0.35900000000000004,
+        -0.6269100000000001,
+        0.0,
+        -0.09561000000000003,
+        -0.90563,
+        -0.41315,
+        0.0,
+        -0.7160700000000001,
+        -0.22573000000000004,
+        0.6605200000000001,
+        0.0,
+        -6.78477,
+        -5.02062,
+        3.7239500000000003,
+        1.0
+      ],
+      "name": "Sun.001"
+    },
+    {
+      "name": "Sun.001"
+    },
+    {
+      "children": [
+        7
+      ],
+      "matrix": [
+        0.18057,
+        -0.6673800000000001,
+        -0.7225,
+        0.0,
+        -0.90178,
+        -0.4056,
+        0.14928000000000002,
+        0.0,
+        0.3926700000000001,
+        -0.62458,
+        0.6750600000000001,
+        0.0,
+        7.064929999999999,
+        -13.85147,
+        9.946349999999999,
+        1.0
+      ],
+      "name": "Sun.002"
+    },
+    {
+      "name": "Sun.002"
+    },
+    {
+      "children": [
+        9
+      ],
+      "matrix": [
+        -0.30624,
+        0.12397000000000001,
+        -0.06714000000000002,
+        0.0,
+        -0.14098000000000002,
+        -0.27008000000000004,
+        0.14435,
+        0.0,
+        -0.0007000000000000002,
+        0.15920000000000004,
+        0.29717000000000005,
+        0.0,
+        0.48495000000000005,
+        -6.848979999999999,
+        0.30746000000000007,
+        1.0
+      ],
+      "name": "Cube.004"
+    },
+    {
+      "mesh": 0,
+      "name": "Cube.004_0"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0
+    }
+  ]
+}
