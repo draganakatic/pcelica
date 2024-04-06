@@ -52,3 +52,11 @@ Profesor: Vesna Marinković \
 Asistent: Marko Spasić
 
 ---------------
+## Galerija:
+![photo 1](/resources/gallery/projekat.png)
+![photo 2](/resources/gallery/nightmode.png)
+![photo 3](/resources/gallery/palcica.png)
+![photo 4](/resources/gallery/pcelica.png)
+![photo 5](/resources/gallery/galeb.png)
+![photo 6](/resources/gallery/dvagalebabela.png)
+![photo 7](/resources/gallery/pcela.gif)
