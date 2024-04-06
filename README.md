@@ -1,7 +1,7 @@
 Projekat za kurs Računarska grafika.\
-Za izradu su korišćeni materijali sa [LearnOpenGL](https://learnopengl.com/). 
-Dragana Katic 91/2021
+Dragana Katic 91/2021 \
 ---------------
+Za izradu su korišćeni materijali sa [LearnOpenGL](https://learnopengl.com/). \
 
 ## Komande
 - `F1` - otvara ImGui
