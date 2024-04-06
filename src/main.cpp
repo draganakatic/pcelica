@@ -47,7 +47,7 @@ bool firstMouse = true;
 bool blinn = false;
 float heightScale = 0.0;
 bool hdr = true;
-float exposure = 0.2f;
+float exposure = 0.25f;
 bool bloom = true;
 
 
@@ -502,6 +502,7 @@ int main() {
         glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
         glBindFramebuffer(GL_FRAMEBUFFER, hdrFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
@@ -686,6 +687,8 @@ int main() {
         modelGaleb2.Draw(shaderModel);
 
         //kocka u fenjeru koja svetli
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
         shaderCube.use();
         shaderCube.setMat4("view", view);
         shaderCube.setMat4("projection", projection);
@@ -696,6 +699,8 @@ int main() {
         glBindVertexArray(cubeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
+        glDisable(GL_CULL_FACE);
+
 
         //cube mora pre fenjera da bi se prikazivala kocka unutra fenjera
         shaderModel.use();
@@ -980,8 +985,8 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
         exposure += 0.05;
     }
 
-    if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS){
-        bloom = !bloom;
+    if(glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS){
+        bloom != bloom;
     }
 
 }
