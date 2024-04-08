@@ -8,6 +8,7 @@ uniform sampler2D bloomBlur;
 uniform bool hdr;
 uniform float exposure;
 uniform bool bloom;
+uniform bool grayscale;
 
 void main()
 {
@@ -29,6 +30,11 @@ void main()
     else
     {
         result = hdrColor;
+    }
+
+    if(grayscale){
+        float gray = 0.2426 * result.r + 0.7152 * result.g + 0.0722 * result.b;
+        result = vec3(gray);
     }
 
     FragColor = vec4(result, 1.0);
