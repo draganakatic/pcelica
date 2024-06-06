@@ -46,7 +46,6 @@ uniform sampler2D diffuseMap;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap;
 
-
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 

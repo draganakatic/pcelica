@@ -410,7 +410,7 @@ int main() {
     pointLight.position = glm::vec3(-15.0f, abs(sin(glfwGetTime())), 3.0f);
     pointLight.ambient = glm::vec3(3.0f, 3.0f, 3.0f);
     pointLight.diffuse = glm::vec3(3.0f, 3.0f, 3.0f);
-    pointLight.specular = glm::vec3(3.0f, 3.0f, 3.0f);
+    pointLight.specular = glm::vec3(3.000f, 3.0f, 3.0f);
     pointLight.constant = 1.0f;
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;

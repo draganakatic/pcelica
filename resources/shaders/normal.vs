@@ -10,7 +10,6 @@ out vec2 TexCoords;
 out vec3 TangentViewPos;
 out vec3 TangentFragPos;
 
-
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
